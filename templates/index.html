@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>AI Hujaifa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Söhne:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #212121;
+      --sidebar-bg: #171717;
+      --surface: #2f2f2f;
+      --surface-hover: #3a3a3a;
+      --border: #383838;
+      --text-primary: #ececec;
+      --text-secondary: #a0a0a0;
+      --text-muted: #6b6b6b;
+      --accent: #d4a853;
+      --accent-light: rgba(212, 168, 83, 0.15);
+      --user-bubble: #2f2f2f;
+      --ai-bubble: transparent;
+      --input-bg: #2f2f2f;
+      --input-border: #4a4a4a;
+      --send-btn: #d4a853;
+      --send-btn-hover: #c49743;
+      --radius: 18px;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font);
+      font-size: 15px;
+      line-height: 1.6;
+      overflow: hidden;
+    }
+
+    /* ─── Layout ─────────────────────────────────── */
+    .app {
+      display: flex;
+      height: 100dvh;
+      position: relative;
+    }
+
+    /* ─── Sidebar ─────────────────────────────────── */
+    .sidebar {
+      width: 260px;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+      z-index: 100;
+    }
+
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .avatar-sm {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #e8844a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .new-chat-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+      font-family: var(--font);
+    }
+
+    .new-chat-btn:hover {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+      border-color: var(--text-muted);
+    }
+
+    .sidebar-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 8px;
+    }
+
+    .sidebar-section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 6px 10px 4px;
+    }
+
+    .chat-history-item {
+      padding: 9px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: background 0.15s;
+    }
+
+    .chat-history-item:hover,
+    .chat-history-item.active {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+    }
+
+    .sidebar-footer {
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13.5px;
+      color: var(--text-secondary);
+    }
+
+    /* ─── Overlay for mobile ─────────────────────── */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 99;
+    }
+
+    /* ─── Main ───────────────────────────────────── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      height: 100dvh;
+    }
+
+    /* ─── Top Bar ────────────────────────────────── */
+    .topbar {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .menu-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 8px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+
+    .menu-btn:hover { background: var(--surface); }
+
+    .topbar-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      flex: 1;
+    }
+
+    .model-badge {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      background: var(--surface);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    /* ─── Messages ───────────────────────────────── */
+    .messages-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 16px 12px;
+      scroll-behavior: smooth;
+    }
+
+    .messages-area::-webkit-scrollbar { width: 4px; }
+    .messages-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* Welcome Screen */
+    .welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      padding: 24px;
+      gap: 16px;
+    }
+
+    .welcome-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #e8844a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      box-shadow: 0 8px 32px rgba(212,168,83,0.3);
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 8px 32px rgba(212,168,83,0.3); }
+      50% { box-shadow: 0 8px 48px rgba(212,168,83,0.55); }
+    }
+
+    .welcome h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .welcome p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      max-width: 280px;
+      line-height: 1.6;
+    }
+
+    .welcome-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    .chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chip:hover {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    /* Messages */
+    .message-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 20px;
+      animation: fadein 0.25s ease;
+    }
+
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message-wrapper.user { align-items: flex-end; }
+    .message-wrapper.ai { align-items: flex-start; }
+
+    .msg-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 4px;
+    }
+
+    .msg-avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #e8844a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .msg-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .bubble {
+      max-width: min(75vw, 520px);
+      padding: 11px 16px;
+      border-radius: 18px;
+      font-size: 14.5px;
+      line-height: 1.65;
+      word-break: break-word;
+    }
+
+    .message-wrapper.user .bubble {
+      background: var(--user-bubble);
+      color: var(--text-primary);
+      border-radius: 18px 18px 4px 18px;
+      border: 1px solid var(--border);
+    }
+
+    .message-wrapper.ai .bubble {
+      background: var(--ai-bubble);
+      color: var(--text-primary);
+      padding: 6px 4px;
+      font-size: 15px;
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex;
+      gap: 5px;
+      padding: 14px 16px;
+      background: var(--surface);
+      border-radius: 18px 18px 18px 4px;
+      width: fit-content;
+      border: 1px solid var(--border);
+    }
+
+    .typing-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      animation: bounce 1.4s ease-in-out infinite;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* Cursor blink for streaming */
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: var(--text-primary);
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 0.9s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* ─── Input Area ──────────────────────────────── */
+    .input-area {
+      padding: 12px 16px;
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+
+    .input-wrapper {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 16px;
+      padding: 10px 10px 10px 16px;
+      transition: border-color 0.2s;
+    }
+
+    .input-wrapper:focus-within {
+      border-color: var(--accent);
+    }
+
+    #userInput {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-size: 15px;
+      font-family: var(--font);
+      line-height: 1.5;
+      resize: none;
+      max-height: 160px;
+      min-height: 24px;
+      overflow-y: auto;
+    }
+
+    #userInput::placeholder { color: var(--text-muted); }
+    #userInput::-webkit-scrollbar { width: 3px; }
+    #userInput::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .send-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--send-btn);
+      border: none;
+      color: #1a1a1a;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+      opacity: 0.4;
+    }
+
+    .send-btn.active {
+      opacity: 1;
+    }
+
+    .send-btn.active:hover {
+      background: var(--send-btn-hover);
+      transform: scale(1.05);
+    }
+
+    .input-footer {
+      text-align: center;
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* ─── Mobile ──────────────────────────────────── */
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 8px 0 32px rgba(0,0,0,0.5);
+      }
+
+      .sidebar-overlay.show { display: block; }
+
+      .menu-btn { display: flex; }
+
+      .bubble { max-width: 85vw; }
+
+      .welcome h1 { font-size: 20px; }
+
+      .messages-area { padding: 16px 12px 8px; }
+
+      .topbar { padding: 10px 14px; }
+    }
+
+    /* Scrollbar for sidebar */
+    .sidebar-body::-webkit-scrollbar { width: 3px; }
+    .sidebar-body::-webkit-scrollbar-thumb { background: var(--border); }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="avatar-sm">H</div>
+        AI Hujaifa
+      </div>
+      <button class="new-chat-btn" onclick="newChat()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New
+      </button>
+    </div>
+    <div class="sidebar-body">
+      <div class="sidebar-section-label">Recent</div>
+      <div id="chatHistory"></div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="avatar-sm" style="width:26px;height:26px;font-size:11px;">U</div>
+        <span>Chatting with Hujaifa</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <button class="menu-btn" onclick="toggleSidebar()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <div class="topbar-title">AI Hujaifa</div>
+      <div class="model-badge">llama-3.3-70b</div>
+    </div>
+
+    <!-- Messages -->
+    <div class="messages-area" id="messagesArea">
+      <div class="welcome" id="welcome">
+        <div class="welcome-avatar">H</div>
+        <h1>Hey! I'm AI Hujaifa 👋</h1>
+        <p>Hujaifa's digital twin. Let's chat, gossip, and vibe. What's on your mind?</p>
+        <div class="welcome-chips">
+          <div class="chip" onclick="sendChip(this)">What's up? 👋</div>
+          <div class="chip" onclick="sendChip(this)">Tell me something fun 😄</div>
+          <div class="chip" onclick="sendChip(this)">Any gossip? ☕</div>
+          <div class="chip" onclick="sendChip(this)">Recommend a movie 🎬</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+      <div class="input-wrapper">
+        <textarea
+          id="userInput"
+          placeholder="Message AI Hujaifa..."
+          rows="1"
+          onkeydown="handleKey(event)"
+          oninput="handleInput()"
+        ></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="input-footer">AI Hujaifa can make mistakes. Just sayin' 😄</div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  let conversationHistory = [];
+  let isStreaming = false;
+  let chatSessions = [];
+
+  const messagesArea = document.getElementById('messagesArea');
+  const userInput = document.getElementById('userInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const welcome = document.getElementById('welcome');
+
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('show');
+  }
+
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+  }
+
+  function handleInput() {
+    userInput.style.height = 'auto';
+    userInput.style.height = Math.min(userInput.scrollHeight, 160) + 'px';
+    const hasText = userInput.value.trim().length > 0;
+    sendBtn.disabled = !hasText || isStreaming;
+    sendBtn.classList.toggle('active', hasText && !isStreaming);
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!sendBtn.disabled) sendMessage();
+    }
+  }
+
+  function sendChip(el) {
+    userInput.value = el.textContent;
+    handleInput();
+    sendMessage();
+  }
+
+  function newChat() {
+    if (conversationHistory.length > 0) {
+      const preview = conversationHistory[0]?.content?.slice(0, 40) + '...' || 'Chat';
+      addToHistory(preview);
+    }
+    conversationHistory = [];
+    messagesArea.innerHTML = '';
+    const w = document.createElement('div');
+    w.className = 'welcome';
+    w.id = 'welcome';
+    w.innerHTML = `
+      <div class="welcome-avatar">H</div>
+      <h1>Hey! I'm AI Hujaifa 👋</h1>
+      <p>Hujaifa's digital twin. Let's chat, gossip, and vibe. What's on your mind?</p>
+      <div class="welcome-chips">
+        <div class="chip" onclick="sendChip(this)">What's up? 👋</div>
+        <div class="chip" onclick="sendChip(this)">Tell me something fun 😄</div>
+        <div class="chip" onclick="sendChip(this)">Any gossip? ☕</div>
+        <div class="chip" onclick="sendChip(this)">Recommend a movie 🎬</div>
+      </div>`;
+    messagesArea.appendChild(w);
+    closeSidebar();
+  }
+
+  function addToHistory(text) {
+    const hist = document.getElementById('chatHistory');
+    const item = document.createElement('div');
+    item.className = 'chat-history-item';
+    item.textContent = text;
+    item.onclick = () => {
+      document.querySelectorAll('.chat-history-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+    };
+    hist.insertBefore(item, hist.firstChild);
+  }
+
+  function hideWelcome() {
+    const w = document.getElementById('welcome');
+    if (w) w.remove();
+  }
+
+  function appendMessage(role, text) {
+    hideWelcome();
+    const wrapper = document.createElement('div');
+    wrapper.className = `message-wrapper ${role}`;
+
+    if (role === 'ai') {
+      const header = document.createElement('div');
+      header.className = 'msg-header';
+      header.innerHTML = `<div class="msg-avatar">H</div><span class="msg-name">AI Hujaifa</span>`;
+      wrapper.appendChild(header);
+    }
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+    wrapper.appendChild(bubble);
+    messagesArea.appendChild(wrapper);
+    scrollBottom();
+    return bubble;
+  }
+
+  function showTyping() {
+    hideWelcome();
+    const wrapper = document.createElement('div');
+    wrapper.className = 'message-wrapper ai';
+    wrapper.id = 'typingWrapper';
+
+    const header = document.createElement('div');
+    header.className = 'msg-header';
+    header.innerHTML = `<div class="msg-avatar">H</div><span class="msg-name">AI Hujaifa</span>`;
+    wrapper.appendChild(header);
+
+    const ind = document.createElement('div');
+    ind.className = 'typing-indicator';
+    ind.innerHTML = `<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>`;
+    wrapper.appendChild(ind);
+    messagesArea.appendChild(wrapper);
+    scrollBottom();
+    return wrapper;
+  }
+
+  function scrollBottom() {
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const text = userInput.value.trim();
+    if (!text || isStreaming) return;
+
+    isStreaming = true;
+    sendBtn.disabled = true;
+    sendBtn.classList.remove('active');
+    userInput.value = '';
+    userInput.style.height = 'auto';
+
+    // Add user message
+    appendMessage('user', text);
+    conversationHistory.push({ role: 'user', content: text });
+
+    // Show typing
+    const typingEl = showTyping();
+
+    try {
+      const response = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: conversationHistory })
+      });
+
+      typingEl.remove();
+
+      // Create AI bubble
+      const wrapper = document.createElement('div');
+      wrapper.className = 'message-wrapper ai';
+      const header = document.createElement('div');
+      header.className = 'msg-header';
+      header.innerHTML = `<div class="msg-avatar">H</div><span class="msg-name">AI Hujaifa</span>`;
+      wrapper.appendChild(header);
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      wrapper.appendChild(bubble);
+      messagesArea.appendChild(wrapper);
+
+      // Add cursor
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      bubble.appendChild(cursor);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') break;
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.content) {
+                fullText += parsed.content;
+                bubble.textContent = fullText;
+                bubble.appendChild(cursor);
+                scrollBottom();
+              }
+            } catch {}
+          }
+        }
+      }
+
+      cursor.remove();
+      conversationHistory.push({ role: 'assistant', content: fullText });
+
+    } catch (err) {
+      typingEl?.remove();
+      appendMessage('ai', 'Oops, something went wrong. Try again? 😅');
+    }
+
+    isStreaming = false;
+    handleInput();
+    scrollBottom();
+  }
+</script>
+
+</body>
+</html>
